@@ -6,6 +6,8 @@ const cors = require("cors");
 app.use(cors());
 const dotenv = require("dotenv");
 const projects = require("./routes/projects");
+const resume = require("./routes/resume");
+
 dotenv.config();
 
 const PORT = process.env.PORT;
@@ -17,3 +19,4 @@ const MONGO = process.env.MONGODB;
 mongoose.connect(MONGO).then(() => console.log("DB CONNECTED"));
 
 app.use("/portfolio/projects", projects);
+app.use("/portfolio/projects/resume", resume);
