@@ -15,7 +15,7 @@ exports.addResume = async (req, res) => {
         isVisible: isVisible ? isVisible : true,
       });
       const result = await newVal.save();
-      res.status(200).json({ status: "ok", data: newVal });
+      res.status(200).json({ status: "ok", data: result });
       // const uploadRes = await cloudinary.uploader.upload(
       //   req.file.path,
       //   {
@@ -57,7 +57,7 @@ exports.getResume = async (req, res) => {
       // );
 
       res.setHeader("Content-Type", "application/pdf");
-      res.status(200).json({ status: "ok", data: result.pdf.data });
+      res.send(result.pdf.data);
     } else {
       res.status(200).json({ status: "error", message: "No data found" });
     }

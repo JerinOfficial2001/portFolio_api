@@ -5,6 +5,7 @@ const portFolioAuthSchema = new mongoose.Schema({
   image: { type: Object },
   password: { type: String, required: true },
   role: { type: String, required: true },
+  gender: String,
 });
 const PortFolio_Auth = mongoose.model("PortFolio_Auth", portFolioAuthSchema);
 exports.PortFolio_Auth = PortFolio_Auth;
