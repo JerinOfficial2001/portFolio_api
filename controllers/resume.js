@@ -1,19 +1,39 @@
-const { Resume } = require("../models/Resume");
+const { PortFolio_Resume } = require("../models/Resume");
 const cloudinary = require("../utils/cloudinary");
 
 exports.addResume = async (req, res) => {
-  const { image } = req.body;
+  const { userID, isVisible } = req.body;
   try {
-    if (image) {
-      const uploadRes = await cloudinary.uploader.upload(image, {
-        upload_preset: "images",
-      });
+    if (!userID) {
+      return res
+        .status(200)
+        .json({ status: "error", message: "UserID is required" });
+    } else if (req.file) {
+      const uploadRes = await cloudinary.uploader.upload(
+        req.file.path,
+        {
+          upload_preset: "Portfolio_resume",
+        },
+        (error, result) => {
+          if (error) {
+            return res.status(200).json({
+              status: "error",
+              message: "Image Should not exceed 70MB",
+            });
+          } else {
+            console.log("Image uploaded to Cloudinary successfully:", result);
+            // Here you can use the result variable which contains details about the uploaded image
+          }
+        }
+      );
       if (uploadRes) {
-        const newVal = new Resume({
-          image: uploadRes,
+        const newVal = new PortFolio_Resume({
+          image: { url: uploadRes.secure_url, public_id: uploadRes.public_id },
+          userID,
+          isVisible: isVisible ? isVisible : true,
         });
         const result = await newVal.save();
-        res.status(200).json({ status: "added", data: result });
+        res.status(200).json({ status: "ok", data: result });
       }
     }
   } catch (error) {
@@ -22,29 +42,34 @@ exports.addResume = async (req, res) => {
 };
 exports.getResume = async (req, res) => {
   try {
-    const result = await Resume.find({});
-    res.status(200).json(result);
+    const result = await PortFolio_Resume.findOne({ userID: req.params.id });
+    if (result) {
+      res.status(200).json({ status: "ok", data: result });
+    } else {
+      res.status(200).json({ status: "error", message: "No data found" });
+    }
   } catch (error) {
     console.log(error);
   }
 };
 exports.updateResume = async (req, res) => {
-  const { image } = req.body;
   try {
-    const resume = await Resume.findById(req.params.id);
+    const resume = await PortFolio_Resume.findById(req.params.id);
     const imgID = resume.image.public_id;
     if (imgID) {
       await cloudinary.uploader.destroy(imgID);
     }
-    const newImg = await cloudinary.uploader.upload(image, {
-      upload_preset: "images",
+    const newImg = await cloudinary.uploader.upload(req.file.path, {
+      upload_preset: "Portfolio_resume",
     });
     resume.image = {
       public_id: newImg.public_id,
       url: newImg.secure_url,
     };
-    await Resume.findByIdAndUpdate(req.params.id, resume, { new: true });
-    res.send({ status: "updated", data: req.body });
+    await PortFolio_Resume.findByIdAndUpdate(req.params.id, resume, {
+      new: true,
+    });
+    res.send({ status: "ok", message: "Resume Updated successfully" });
   } catch (error) {
     console.log(error);
   }
