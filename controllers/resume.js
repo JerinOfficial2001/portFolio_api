@@ -9,32 +9,39 @@ exports.addResume = async (req, res) => {
         .status(200)
         .json({ status: "error", message: "UserID is required" });
     } else if (req.file) {
-      const uploadRes = await cloudinary.uploader.upload(
-        req.file.path,
-        {
-          upload_preset: "Portfolio_resume",
-        },
-        (error, result) => {
-          if (error) {
-            return res.status(200).json({
-              status: "error",
-              message: "Image Should not exceed 70MB",
-            });
-          } else {
-            console.log("Image uploaded to Cloudinary successfully:", result);
-            // Here you can use the result variable which contains details about the uploaded image
-          }
-        }
-      );
-      if (uploadRes) {
-        const newVal = new PortFolio_Resume({
-          image: { url: uploadRes.secure_url, public_id: uploadRes.public_id },
-          userID,
-          isVisible: isVisible ? isVisible : true,
-        });
-        const result = await newVal.save();
-        res.status(200).json({ status: "ok", data: result });
-      }
+      const newVal = new PortFolio_Resume({
+        pdf: { name: req.file.originalname, data: req.file.path },
+        userID,
+        isVisible: isVisible ? isVisible : true,
+      });
+      const result = await newVal.save();
+      res.status(200).json({ status: "ok", data: newVal });
+      // const uploadRes = await cloudinary.uploader.upload(
+      //   req.file.path,
+      //   {
+      //     upload_preset: "Portfolio_resume",
+      //   },
+      //   (error, result) => {
+      //     if (error) {
+      //       return res.status(200).json({
+      //         status: "error",
+      //         message: "Image Should not exceed 70MB",
+      //       });
+      //     } else {
+      //       console.log("Image uploaded to Cloudinary successfully:", result);
+      //       // Here you can use the result variable which contains details about the uploaded image
+      //     }
+      //   }
+      // );
+      // if (uploadRes) {
+      //   const newVal = new PortFolio_Resume({
+      //     image: { url: uploadRes.secure_url, public_id: uploadRes.public_id },
+      //     userID,
+      //     isVisible: isVisible ? isVisible : true,
+      //   });
+      //   const result = await newVal.save();
+      //   res.status(200).json({ status: "ok", data: result });
+      // }
     }
   } catch (error) {
     console.log(error);
@@ -44,7 +51,13 @@ exports.getResume = async (req, res) => {
   try {
     const result = await PortFolio_Resume.findOne({ userID: req.params.id });
     if (result) {
-      res.status(200).json({ status: "ok", data: result });
+      // res.setHeader(
+      //   "Content-Disposition",
+      //   `attachment; filename="${result.pdf.name}"`
+      // );
+
+      res.setHeader("Content-Type", "application/pdf");
+      res.status(200).json({ status: "ok", data: result.pdf.data });
     } else {
       res.status(200).json({ status: "error", message: "No data found" });
     }

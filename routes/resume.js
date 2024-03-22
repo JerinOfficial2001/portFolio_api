@@ -13,8 +13,8 @@ const fileStorageEngine = multer.diskStorage({
 });
 
 const upload = multer({ storage: fileStorageEngine });
-router.post("/add", upload.single("image"), addResume);
+router.post("/add", upload.single("pdf"), addResume);
 router.get("/get/:id", getResume);
-router.put("/:id", upload.single("image"), updateResume);
+router.put("/:id", upload.single("pdf"), updateResume);
 
 module.exports = router;
