@@ -93,7 +93,7 @@ exports.login = async (req, res, next) => {
 
       res.status(200).json({ status: "ok", data: token });
     } else {
-      res.status(401).json({ status: "error", message: "Invalid credentials" });
+      res.status(200).json({ status: "error", message: "Invalid credentials" });
     }
   } catch (error) {
     next(error);
@@ -104,7 +104,7 @@ exports.userData = async (req, res, next) => {
     const token = req.headers.authorization?.replace("Bearer ", "");
     if (!token) {
       return res
-        .status(401)
+        .status(200)
         .json({ status: "error", message: "Unauthorized - Missing Token" });
     }
     const decoded = jwt.verify(token, SECRET_KEY);
@@ -113,7 +113,7 @@ exports.userData = async (req, res, next) => {
     if (user) {
       res.status(200).json({ status: "ok", data: user });
     } else {
-      res.status(404).json({ status: "error", message: "User not found" });
+      res.status(200).json({ status: "error", message: "User not found" });
     }
   } catch (error) {
     console.error("Error:", error);
