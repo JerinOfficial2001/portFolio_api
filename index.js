@@ -13,7 +13,7 @@ const auth = require("./routes/auth");
 const contact = require("./routes/Contacts/index");
 const contact_Msg = require("./routes/Contacts/msg");
 const credentials = require("./routes/credentials");
-
+const path = require("path");
 dotenv.config();
 
 const PORT = process.env.PORT;
@@ -42,3 +42,4 @@ app.use("/portfolio/profile", profile);
 app.use("/portfolio/contact", contact);
 app.use("/portfolio/contact/msg", contact_Msg);
 app.use("/portfolio/credentials", credentials);
+app.use("/public", express.static(path.join(__dirname, "Public")));

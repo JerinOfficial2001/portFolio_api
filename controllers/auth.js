@@ -13,7 +13,7 @@ exports.getAllUsers = async (req, res, next) => {
 };
 exports.getUserByID = async (req, res, next) => {
   try {
-    const user = await PortFolio_Auth.findOne(req.param.id);
+    const user = await PortFolio_Auth.findById(req.params.id);
     res.status(200).json({ status: "ok", data: user });
   } catch (error) {
     next(error);

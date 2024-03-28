@@ -1,19 +1,10 @@
 const mongoose = require("mongoose");
 const portFolio_CredentialSchema = new mongoose.Schema({
+  image: { type: Object, required: true },
   userID: { type: String, required: true },
-  education: {
-    degree: { type: Object, required: true },
-    HSC: { type: Object, required: true },
-    SSLC: { type: Object, required: true },
-  },
-
+  education: { type: Array, required: true },
   skills: { type: Array, required: true },
-  link: [
-    {
-      url: { type: String, required: true },
-      name: { type: String, required: true },
-    },
-  ],
+  link: { type: Object, required: true },
 });
 const PortFolio_Credential = mongoose.model(
   "PortFolio_Credential",

@@ -1,3 +1,4 @@
+const { PortFolio_Auth } = require("../models/auth");
 const { PortFolio_Profile } = require("../models/profile");
 const cloudinary = require("../utils/cloudinary");
 
@@ -30,11 +31,13 @@ exports.addProfile = async (req, res, next) => {
             }
           }
         );
+        const userData = await PortFolio_Auth.findById(DATA.userID);
         if (uploadRes) {
           DATA.image = {
             url: uploadRes.secure_url,
             public_id: uploadRes.public_id,
           };
+          DATA.gender = userData.gender;
           const newVal = new PortFolio_Profile(DATA);
           const result = await newVal.save();
           res.status(200).json({
@@ -72,13 +75,84 @@ exports.getProfile = async (req, res, next) => {
   }
 };
 exports.updateProfile = async (req, res, next) => {
+  const { name, role, qualification, about, image, from, userID } = req.body;
   try {
+    const profile = await PortFolio_Profile.findById(req.params.id);
+    const imgID = profile.image.public_id;
+
+    if (req.file) {
+      if (imgID) {
+        await cloudinary.uploader.destroy(imgID);
+      }
+      const newImg = await cloudinary.uploader.upload(
+        req.file.path,
+        {
+          upload_preset: "Portfolio_profile",
+        },
+        (err, imgResult) => {
+          if (err) {
+            return res.send({ status: "error", message: err });
+          } else {
+            return imgResult;
+          }
+        }
+      );
+      const userData = await PortFolio_Auth.findById(userID);
+      if (newImg) {
+        const NewObj = {
+          name,
+          role,
+          qualification,
+          about,
+          image,
+          from,
+          userID,
+        };
+        NewObj.image = { public_id: newImg.public_id, url: newImg.secure_url };
+        NewObj.gender = userData.gender;
+        await PortFolio_Profile.findByIdAndUpdate(req.params.id, NewObj, {
+          new: true,
+        });
+        res.send({ status: "ok", message: "Profile Updated successfully" });
+      } else {
+        res.send({ status: "error", message: "Something went wrong" });
+      }
+    } else {
+      const userData = await PortFolio_Auth.findById(userID);
+      const NewObj = {
+        image: profile.image,
+        name,
+        role,
+        qualification,
+        about,
+        from,
+        userID,
+        gender: userData.gender,
+      };
+
+      await PortFolio_Profile.findByIdAndUpdate(req.params.id, NewObj, {
+        new: true,
+      });
+      res.send({ status: "ok", message: "Profile Updated successfully" });
+    }
   } catch (error) {
     next(error);
   }
 };
 exports.deleteProfile = async (req, res, next) => {
   try {
+  } catch (error) {
+    next(error);
+  }
+};
+exports.GetAllProfile = async (req, res, next) => {
+  try {
+    const userProfile = await PortFolio_Profile.find({});
+    if (userProfile) {
+      res.status(200).json({ status: "ok", data: userProfile });
+    } else {
+      res.status(200).json({ status: "error", message: "No Data Found" });
+    }
   } catch (error) {
     next(error);
   }

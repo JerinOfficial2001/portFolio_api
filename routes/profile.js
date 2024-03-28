@@ -4,6 +4,7 @@ const {
   getProfile,
   updateProfile,
   deleteProfile,
+  GetAllProfile,
 } = require("../controllers/profiles");
 
 const router = express.Router();
@@ -21,6 +22,7 @@ const fileStorageEngine = multer.diskStorage({
 const upload = multer({ storage: fileStorageEngine });
 router.post("/add", upload.single("image"), addProfile);
 router.get("/get/:id", getProfile);
+router.get("/get", GetAllProfile);
 router.put("/update/:id", upload.single("image"), updateProfile);
 router.delete("/remove/:id", deleteProfile);
 
