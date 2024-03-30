@@ -4,6 +4,7 @@ const {
   getProjects,
   removeProject,
   updateProject,
+  getProjectByID,
 } = require("../controllers/projects");
 const router = express.Router();
 const multer = require("multer");
@@ -18,8 +19,9 @@ const fileStorageEngine = multer.diskStorage({
 });
 
 const upload = multer({ storage: fileStorageEngine });
-router.post("/add", upload.single("image"), addProject);
+router.post("/add", upload.array("image"), addProject);
 router.get("/get/:id", getProjects);
+router.get("/getByID/:id", getProjectByID);
 router.delete("/remove/:id", removeProject);
 router.put("/update/:id", upload.single("image"), updateProject);
 

@@ -1,8 +1,9 @@
 const mongoose = require("mongoose");
 const portFolio_ProjectSchema = new mongoose.Schema({
   title: { type: String, required: true },
+  endpoint: { type: [Object], required: true },
   link: { type: String, required: true },
-  image: { type: Object, required: true },
+  image: { type: [String], required: true },
   userID: { type: String, required: true },
   isVisible: Boolean,
 });

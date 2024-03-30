@@ -42,4 +42,4 @@ app.use("/portfolio/profile", profile);
 app.use("/portfolio/contact", contact);
 app.use("/portfolio/contact/msg", contact_Msg);
 app.use("/portfolio/credentials", credentials);
-app.use("/public", express.static(path.join(__dirname, "Public")));
+app.use("/portfolio/public", express.static(path.join(__dirname, "Public")));
