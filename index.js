@@ -43,3 +43,6 @@ app.use("/portfolio/contact", contact);
 app.use("/portfolio/contact/msg", contact_Msg);
 app.use("/portfolio/credentials", credentials);
 app.use("/portfolio/public", express.static(path.join(__dirname, "Public")));
+app.get("/", (req, res) => {
+  res.json({ status: "ok", message: "Server Connected" });
+});
