@@ -32,7 +32,7 @@ exports.addProject = async (req, res) => {
 
         const DATA = {
           isVisible: isVisible ? isVisible : true,
-          image: req.files.map((elem) => `${BASE_URL}/${elem.path}`),
+          image: req.files.map((elem) => elem.path),
           title,
           endpoint: JSON.parse(req.body.endpoint),
           link,
@@ -68,7 +68,17 @@ exports.getProjects = async (req, res) => {
   try {
     const result = await PortFolio_Projects.find({ userID: req.params.id });
     if (result) {
-      res.status(200).json({ status: "ok", data: result });
+      const Data = result.map((obj) => ({
+        userID: obj.userID,
+        isVisible: obj.isVisible,
+        link: obj.link,
+        endpoint: obj.endpoint,
+        title: obj.title,
+        _id: obj._id,
+        image: obj.image?.map((elem) => `${BASE_URL}/${elem}`),
+      }));
+      // console.log(BASE_URL);
+      res.status(200).json({ status: "ok", data: Data });
     } else {
       res.status(200).json({ status: "error", message: "No data found" });
     }
@@ -79,8 +89,17 @@ exports.getProjects = async (req, res) => {
 exports.getProjectByID = async (req, res) => {
   try {
     const result = await PortFolio_Projects.findById(req.params.id);
+    const data = {
+      userID: result.userID,
+      isVisible: result.isVisible,
+      link: result.link,
+      endpoint: result.endpoint,
+      title: result.title,
+      _id: result._id,
+      image: result.image?.map((elem) => `${BASE_URL}/${elem}`),
+    };
     if (result) {
-      res.status(200).json({ status: "ok", data: result });
+      res.status(200).json({ status: "ok", data: data });
     } else {
       res.status(200).json({ status: "error", message: "No data found" });
     }
