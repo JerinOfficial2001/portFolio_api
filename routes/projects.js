@@ -17,12 +17,20 @@ const fileStorageEngine = multer.diskStorage({
     cb(null, Date.now() + "_" + file.originalname);
   },
 });
-
-const upload = multer({ storage: fileStorageEngine });
+const fileFilter = (req, file, cb) => {
+  // Check if the file is an array of objects (files)
+  if (Array.isArray(req.files)) {
+    cb(null, true); // Allow saving the files
+  } else {
+    // Reject the request if the file is an array of strings
+    cb(new Error("Invalid file format. Expected an array of objects."));
+  }
+};
+const upload = multer({ storage: fileStorageEngine, fileFilter: fileFilter });
 router.post("/add", upload.array("image"), addProject);
 router.get("/get/:id", getProjects);
 router.get("/getByID/:id", getProjectByID);
 router.delete("/remove/:id", removeProject);
-router.put("/update/:id", upload.single("image"), updateProject);
+router.put("/update/:id", upload.array("image"), updateProject);
 
 module.exports = router;
