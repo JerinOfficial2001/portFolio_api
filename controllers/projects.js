@@ -118,56 +118,117 @@ exports.removeProject = async (req, res) => {
     console.log(error);
   }
 };
+// exports.updateProject = async (req, res, next) => {
+//   const { title, endpoint, link, userID, isVisible } = req.body;
+//   try {
+//     if (link && title && userID && endpoint.length !== 0) {
+//       const Project = await PortFolio_Projects.findById(req.params.id);
+//       if (Project) {
+//         if (req.files) {
+//           const DATA = {
+//             isVisible: isVisible ? isVisible : true,
+//             image: req.files.map((elem) => elem.path),
+//             title,
+//             endpoint: JSON.parse(req.body.endpoint),
+//             link,
+//             userID,
+//           };
+//           const result = await PortFolio_Projects.findByIdAndUpdate(
+//             req.params.id,
+//             DATA,
+//             { new: true }
+//           );
+//           res.status(200).json({
+//             status: "ok",
+//             message: "Project Updated Successfully",
+//           });
+//         } else {
+//           const DATA = {
+//             isVisible: isVisible ? isVisible : true,
+//             image: Project.image,
+//             title,
+//             endpoint: JSON.parse(req.body.endpoint),
+//             link,
+//             userID,
+//           };
+//           const result = await PortFolio_Projects.findByIdAndUpdate(
+//             req.params.id,
+//             DATA,
+//             { new: true }
+//           );
+//           res.status(200).json({
+//             status: "ok",
+//             message: "Project Updated Successfully",
+//           });
+//         }
+//       } else {
+//         res.status(200).json({ status: "error", message: "Project Not Found" });
+//       }
+//     } else {
+//       res
+//         .status(200)
+//         .json({ status: "error", message: "All fields are Mandatory" });
+//     }
+//   } catch (error) {
+//     next(error);
+//   }
+// };
 exports.updateProject = async (req, res, next) => {
   const { title, endpoint, link, userID, isVisible } = req.body;
   try {
-    if (link && title && userID && endpoint.length !== 0) {
+    if (title && endpoint && link && userID && req.files) {
       const Project = await PortFolio_Projects.findById(req.params.id);
       if (Project) {
-        if (req.files) {
-          const DATA = {
-            isVisible: isVisible ? isVisible : true,
-            image: req.files.map((elem) => elem.path),
-            title,
-            endpoint: JSON.parse(req.body.endpoint),
-            link,
-            userID,
-          };
-          const result = await PortFolio_Projects.findByIdAndUpdate(
-            req.params.id,
-            DATA,
-            { new: true }
-          );
-          res.status(200).json({
-            status: "ok",
-            message: "Project Updated Successfully",
-          });
-        } else {
-          const DATA = {
-            isVisible: isVisible ? isVisible : true,
-            image: Project.image,
-            title,
-            endpoint: JSON.parse(req.body.endpoint),
-            link,
-            userID,
-          };
-          const result = await PortFolio_Projects.findByIdAndUpdate(
-            req.params.id,
-            DATA,
-            { new: true }
-          );
-          res.status(200).json({
-            status: "ok",
-            message: "Project Updated Successfully",
-          });
-        }
+        const images = req.files.map((elem) => elem.path);
+        const updatedData = {
+          isVisible: isVisible || true,
+          image: Project.image.concat(images), // Concatenate new images with existing ones
+          title,
+          endpoint: JSON.parse(endpoint),
+          link,
+          userID,
+        };
+        const result = await PortFolio_Projects.findByIdAndUpdate(
+          req.params.id,
+          updatedData,
+          { new: true }
+        );
+        res.status(200).json({
+          status: "ok",
+          message: "Project Updated Successfully",
+        });
       } else {
-        res.status(200).json({ status: "error", message: "Project Not Found" });
+        res.status(404).json({ status: "error", message: "Project Not Found" });
+      }
+    } else if (title && endpoint && link && userID) {
+      // Handle case where no files are uploaded
+      const Project = await PortFolio_Projects.findById(req.params.id);
+      if (Project) {
+        const updatedData = {
+          isVisible: isVisible || true,
+          image: Project.image, // Keep existing images unchanged
+          title,
+          endpoint: JSON.parse(endpoint),
+          link,
+          userID,
+        };
+        const result = await PortFolio_Projects.findByIdAndUpdate(
+          req.params.id,
+          updatedData,
+          { new: true }
+        );
+        res.status(200).json({
+          status: "ok",
+          message: "Project Updated Successfully",
+        });
+      } else {
+        res.status(404).json({ status: "error", message: "Project Not Found" });
       }
     } else {
-      res
-        .status(200)
-        .json({ status: "error", message: "All fields are Mandatory" });
+      res.status(400).json({
+        status: "error",
+        message: "All fields are mandatory and at least one file is required",
+      });
     }
   } catch (error) {
     next(error);
