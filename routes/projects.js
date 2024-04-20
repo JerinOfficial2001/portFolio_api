@@ -5,6 +5,7 @@ const {
   removeProject,
   updateProject,
   getProjectByID,
+  updateVisiblity,
 } = require("../controllers/projects");
 const router = express.Router();
 const multer = require("multer");
@@ -32,5 +33,6 @@ router.get("/get/:id", getProjects);
 router.get("/getByID/:id", getProjectByID);
 router.delete("/remove/:id", removeProject);
 router.put("/update/:id", upload.single("image"), updateProject);
+router.put("/visibility/:id", updateVisiblity);
 
 module.exports = router;

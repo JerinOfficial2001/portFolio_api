@@ -40,7 +40,7 @@ exports.addProject = async (req, res) => {
             endpoint: JSON.parse(req.body.endpoint),
             link,
             userID,
-            credentials,
+            credentials: JSON.parse(req.body.credentials),
           };
           const newVal = new PortFolio_Projects(DATA);
           const result = await newVal.save();
@@ -218,7 +218,7 @@ exports.updateProject = async (req, res, next) => {
           endpoint: JSON.parse(endpoint),
           link,
           userID,
-          credentials,
+          credentials: JSON.parse(req.body.credentials),
         };
         const result = await PortFolio_Projects.findByIdAndUpdate(
           req.params.id,
@@ -243,7 +243,7 @@ exports.updateProject = async (req, res, next) => {
           endpoint: JSON.parse(endpoint),
           link,
           userID,
-          credentials,
+          credentials: JSON.parse(req.body.credentials),
         };
         const result = await PortFolio_Projects.findByIdAndUpdate(
           req.params.id,
@@ -262,6 +262,39 @@ exports.updateProject = async (req, res, next) => {
         status: "error",
         message: "All fields are mandatory and at least one file is required",
       });
+    }
+  } catch (error) {
+    next(error);
+  }
+};
+exports.updateVisiblity = async (req, res, next) => {
+  try {
+    // Handle case where no files are uploaded
+    const Project = await PortFolio_Projects.findById(req.params.id);
+    if (Project) {
+      const updatedData = {
+        isVisible: req.body.isVisible,
+        image: Project.image,
+        title: Project.title,
+        endpoint: Project.endpoint,
+        link: Project.link,
+        userID: Project.userID,
+        credentials: Project.credentials,
+      };
+      const result = await PortFolio_Projects.findByIdAndUpdate(
+        req.params.id,
+        updatedData,
+        { new: true }
+      );
+
+      res.status(200).json({
+        status: "ok",
+        message: req.body.isVisible
+          ? "Project visible to everyone"
+          : "Project added to draft",
+      });
+    } else {
+      res.status(404).json({ status: "error", message: "Project Not Found" });
     }
   } catch (error) {
     next(error);
