@@ -26,11 +26,11 @@ const fileFilter = (req, file, cb) => {
     cb(new Error("Invalid file format. Expected an array of objects."));
   }
 };
-const upload = multer({ storage: fileStorageEngine, fileFilter: fileFilter });
-router.post("/add", upload.array("image"), addProject);
+const upload = multer({ storage: fileStorageEngine });
+router.post("/add", upload.single("image"), addProject);
 router.get("/get/:id", getProjects);
 router.get("/getByID/:id", getProjectByID);
 router.delete("/remove/:id", removeProject);
-router.put("/update/:id", upload.array("image"), updateProject);
+router.put("/update/:id", upload.single("image"), updateProject);
 
 module.exports = router;

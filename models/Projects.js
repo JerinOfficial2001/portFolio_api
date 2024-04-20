@@ -3,9 +3,10 @@ const portFolio_ProjectSchema = new mongoose.Schema({
   title: { type: String, required: true },
   endpoint: { type: [Object], required: true },
   link: { type: String, required: true },
-  image: { type: [String], required: true },
+  image: { type: Object, required: true },
   userID: { type: String, required: true },
   isVisible: Boolean,
+  credentials: { type: Object },
 });
 const PortFolio_Projects = mongoose.model(
   "PortFolio_Projects",

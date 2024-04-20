@@ -2,7 +2,7 @@ const { PortFolio_Projects } = require("../models/Projects");
 const cloudinary = require("../utils/cloudinary");
 const BASE_URL = process.env.BASE_URL;
 exports.addProject = async (req, res) => {
-  const { title, endpoint, link, userID, isVisible } = req.body;
+  const { title, endpoint, link, userID, isVisible, credentials } = req.body;
   try {
     if (link && title && userID && endpoint.length !== 0) {
       const Project = await PortFolio_Projects.findOne({ link });
@@ -11,44 +11,49 @@ exports.addProject = async (req, res) => {
           .status(200)
           .json({ status: "error", message: "Project Already Exists" });
       }
-      if (req.files) {
-        // const uploadRes = await cloudinary.uploader.upload(
-        //   req.file.path,
-        //   {
-        //     upload_preset: "Portfolio_project",
-        //   },
-        //   (error, result) => {
-        //     if (error) {
-        //       return res.status(200).json({
-        //         status: "error",
-        //         message: "Image Should not exceed 70MB",
-        //       });
-        //     } else {
-        //       console.log("Image uploaded to Cloudinary successfully:", result);
-        //       // Here you can use the result variable which contains details about the uploaded image
-        //     }
-        //   }
-        // );
+      if (req.file) {
+        const uploadRes = await cloudinary.uploader.upload(
+          req.file.path,
+          {
+            upload_preset: "Portfolio_project",
+          },
+          (error, result) => {
+            if (error) {
+              return res.status(200).json({
+                status: "error",
+                message: "Image Should not exceed 70MB",
+              });
+            } else {
+              return result;
+            }
+          }
+        );
 
-        const DATA = {
-          isVisible: isVisible ? isVisible : true,
-          image: req.files.map((elem) => elem.path),
-          title,
-          endpoint: JSON.parse(req.body.endpoint),
-          link,
-          userID,
-        };
-        const newVal = new PortFolio_Projects(DATA);
-        const result = await newVal.save();
+        if (uploadRes) {
+          const DATA = {
+            isVisible: isVisible ? isVisible : true,
+            image: {
+              public_id: uploadRes.public_id,
+              url: uploadRes.secure_url,
+            },
+            title,
+            endpoint: JSON.parse(req.body.endpoint),
+            link,
+            userID,
+            credentials,
+          };
+          const newVal = new PortFolio_Projects(DATA);
+          const result = await newVal.save();
 
-        // res.status(200).json({
-        //   status: "ok",
-        //   message: newVal,
-        // });
-        res.status(200).json({
-          status: "ok",
-          message: "Project Added Successfully",
-        });
+          // res.status(200).json({
+          //   status: "ok",
+          //   message: newVal,
+          // });
+          res.status(200).json({
+            status: "ok",
+            message: "Project Added Successfully",
+          });
+        }
       } else {
         res.status(200).json({
           status: "error",
@@ -68,17 +73,16 @@ exports.getProjects = async (req, res) => {
   try {
     const result = await PortFolio_Projects.find({ userID: req.params.id });
     if (result) {
-      const Data = result.map((obj) => ({
-        userID: obj.userID,
-        isVisible: obj.isVisible,
-        link: obj.link,
-        endpoint: obj.endpoint,
-        title: obj.title,
-        _id: obj._id,
-        image: obj.image?.map((elem) => `${BASE_URL}/${elem}`),
-      }));
-      // console.log(BASE_URL);
-      res.status(200).json({ status: "ok", data: Data });
+      // const Data = result.map((obj) => ({
+      //   userID: obj.userID,
+      //   isVisible: obj.isVisible,
+      //   link: obj.link,
+      //   endpoint: obj.endpoint,
+      //   title: obj.title,
+      //   _id: obj._id,
+      //   image: obj.image?.map((elem) => `${BASE_URL}/${elem}`),
+      // }));
+      res.status(200).json({ status: "ok", data: result });
     } else {
       res.status(200).json({ status: "error", message: "No data found" });
     }
@@ -89,17 +93,17 @@ exports.getProjects = async (req, res) => {
 exports.getProjectByID = async (req, res) => {
   try {
     const result = await PortFolio_Projects.findById(req.params.id);
-    const data = {
-      userID: result.userID,
-      isVisible: result.isVisible,
-      link: result.link,
-      endpoint: result.endpoint,
-      title: result.title,
-      _id: result._id,
-      image: result.image?.map((elem) => `${BASE_URL}/${elem}`),
-    };
+    // const data = {
+    //   userID: result.userID,
+    //   isVisible: result.isVisible,
+    //   link: result.link,
+    //   endpoint: result.endpoint,
+    //   title: result.title,
+    //   _id: result._id,
+    //   image: result.image?.map((elem) => `${BASE_URL}/${elem}`),
+    // };
     if (result) {
-      res.status(200).json({ status: "ok", data: data });
+      res.status(200).json({ status: "ok", data: result });
     } else {
       res.status(200).json({ status: "error", message: "No data found" });
     }
@@ -121,72 +125,100 @@ exports.removeProject = async (req, res) => {
 // exports.updateProject = async (req, res, next) => {
 //   const { title, endpoint, link, userID, isVisible } = req.body;
 //   try {
-//     if (link && title && userID && endpoint.length !== 0) {
+//     if (title && endpoint && link && userID && req.files) {
 //       const Project = await PortFolio_Projects.findById(req.params.id);
 //       if (Project) {
-//         if (req.files) {
-//           const DATA = {
-//             isVisible: isVisible ? isVisible : true,
-//             image: req.files.map((elem) => elem.path),
-//             title,
-//             endpoint: JSON.parse(req.body.endpoint),
-//             link,
-//             userID,
-//           };
-//           const result = await PortFolio_Projects.findByIdAndUpdate(
-//             req.params.id,
-//             DATA,
-//             { new: true }
-//           );
-//           res.status(200).json({
-//             status: "ok",
-//             message: "Project Updated Successfully",
-//           });
-//         } else {
-//           const DATA = {
-//             isVisible: isVisible ? isVisible : true,
-//             image: Project.image,
-//             title,
-//             endpoint: JSON.parse(req.body.endpoint),
-//             link,
-//             userID,
-//           };
-//           const result = await PortFolio_Projects.findByIdAndUpdate(
-//             req.params.id,
-//             DATA,
-//             { new: true }
-//           );
-//           res.status(200).json({
-//             status: "ok",
-//             message: "Project Updated Successfully",
-//           });
-//         }
+//         const images = req.files.map((elem) => elem.path);
+//         const updatedData = {
+//           isVisible: isVisible || true,
+//           image: Project.image.concat(images), // Concatenate new images with existing ones
+//           title,
+//           endpoint: JSON.parse(endpoint),
+//           link,
+//           userID,
+//         };
+//         const result = await PortFolio_Projects.findByIdAndUpdate(
+//           req.params.id,
+//           updatedData,
+//           { new: true }
+//         );
+//         res.status(200).json({
+//           status: "ok",
+//           message: "Project Updated Successfully",
+//         });
 //       } else {
-//         res.status(200).json({ status: "error", message: "Project Not Found" });
+//         res.status(404).json({ status: "error", message: "Project Not Found" });
+//       }
+//     } else if (title && endpoint && link && userID) {
+//       // Handle case where no files are uploaded
+//       const Project = await PortFolio_Projects.findById(req.params.id);
+//       if (Project) {
+//         const updatedData = {
+//           isVisible: isVisible || true,
+//           image: Project.image, // Keep existing images unchanged
+//           title,
+//           endpoint: JSON.parse(endpoint),
+//           link,
+//           userID,
+//         };
+//         const result = await PortFolio_Projects.findByIdAndUpdate(
+//           req.params.id,
+//           updatedData,
+//           { new: true }
+//         );
+//         res.status(200).json({
+//           status: "ok",
+//           message: "Project Updated Successfully",
+//         });
+//       } else {
+//         res.status(404).json({ status: "error", message: "Project Not Found" });
 //       }
 //     } else {
-//       res
-//         .status(200)
-//         .json({ status: "error", message: "All fields are Mandatory" });
+//       res.status(400).json({
+//         status: "error",
+//         message: "All fields are mandatory and at least one file is required",
+//       });
 //     }
 //   } catch (error) {
 //     next(error);
 //   }
 // };
 exports.updateProject = async (req, res, next) => {
-  const { title, endpoint, link, userID, isVisible } = req.body;
+  const { title, endpoint, link, userID, isVisible, credentials } = req.body;
   try {
-    if (title && endpoint && link && userID && req.files) {
+    if (title && endpoint && link && userID && req.file) {
       const Project = await PortFolio_Projects.findById(req.params.id);
+      const imgID = Project.image.public_id;
+      await cloudinary.uploader.destroy(imgID);
+
       if (Project) {
-        const images = req.files.map((elem) => elem.path);
+        const uploadRes = await cloudinary.uploader.upload(
+          req.file.path,
+          {
+            upload_preset: "Portfolio_project",
+          },
+          (error, result) => {
+            if (error) {
+              return res.status(200).json({
+                status: "error",
+                message: "Image Should not exceed 70MB",
+              });
+            } else {
+              return result;
+            }
+          }
+        );
         const updatedData = {
           isVisible: isVisible || true,
-          image: Project.image.concat(images), // Concatenate new images with existing ones
+          image: {
+            public_id: uploadRes.public_id,
+            url: uploadRes.secure_url,
+          }, // Concatenate new images with existing ones
           title,
           endpoint: JSON.parse(endpoint),
           link,
           userID,
+          credentials,
         };
         const result = await PortFolio_Projects.findByIdAndUpdate(
           req.params.id,
@@ -206,11 +238,12 @@ exports.updateProject = async (req, res, next) => {
       if (Project) {
         const updatedData = {
           isVisible: isVisible || true,
-          image: Project.image, // Keep existing images unchanged
+          image: Project.image,
           title,
           endpoint: JSON.parse(endpoint),
           link,
           userID,
+          credentials,
         };
         const result = await PortFolio_Projects.findByIdAndUpdate(
           req.params.id,
