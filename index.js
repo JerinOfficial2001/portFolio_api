@@ -4,7 +4,6 @@ app.use(express.json());
 const mongoose = require("mongoose");
 const cors = require("cors");
 app.use(cors());
-const multer = require("multer");
 const dotenv = require("dotenv");
 const projects = require("./routes/projects");
 const profile = require("./routes/profile");
@@ -23,17 +22,6 @@ app.listen(PORT, () => {
 const MONGO = process.env.MONGODB;
 
 mongoose.connect(MONGO).then(() => console.log("DB CONNECTED"));
-
-const fileStorageEngine = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, "Public/images");
-  },
-  filename: (req, file, cb) => {
-    cb(null, Date.now() + "_" + file.originalname);
-  },
-});
-
-exports.upload = multer({ storage: fileStorageEngine });
 
 app.use("/portfolio/projects", projects);
 app.use("/portfolio/resume", resume);
