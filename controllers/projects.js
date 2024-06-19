@@ -217,10 +217,12 @@ exports.updateProject = async (req, res, next) => {
             url: uploadRes.secure_url,
           }, // Concatenate new images with existing ones
           title,
-          endpoint: JSON.parse(endpoint),
+          endpoint: endpoint ? JSON.parse(endpoint) : [],
           link,
           userID,
-          credentials: JSON.parse(req.body.credentials),
+          credentials: req.body.credentials
+            ? JSON.parse(req.body.credentials)
+            : null,
         };
         const result = await PortFolio_Projects.findByIdAndUpdate(
           req.params.id,
@@ -242,10 +244,12 @@ exports.updateProject = async (req, res, next) => {
           isVisible: isVisible || true,
           image: Project.image,
           title,
-          endpoint: JSON.parse(endpoint),
+          endpoint: endpoint ? JSON.parse(endpoint) : [],
           link,
           userID,
-          credentials: JSON.parse(req.body.credentials),
+          credentials: req.body.credentials
+            ? JSON.parse(req.body.credentials)
+            : null,
         };
         const result = await PortFolio_Projects.findByIdAndUpdate(
           req.params.id,
