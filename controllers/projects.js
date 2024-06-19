@@ -37,10 +37,12 @@ exports.addProject = async (req, res) => {
               url: uploadRes.secure_url,
             },
             title,
-            endpoint: JSON.parse(req.body.endpoint),
+            endpoint: req.body.endpoint ? JSON.parse(req.body.endpoint) : [],
             link,
             userID,
-            credentials: JSON.parse(req.body.credentials),
+            credentials: req.body.credentials
+              ? JSON.parse(req.body.credentials)
+              : null,
           };
           const newVal = new PortFolio_Projects(DATA);
           const result = await newVal.save();
