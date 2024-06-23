@@ -1,6 +1,7 @@
 const jwt = require("jsonwebtoken");
 const { PortFolio_Auth } = require("../models/auth");
 const cloudinary = require("../utils/cloudinary");
+const { Authentication } = require("../utils/Authentication");
 
 const SECRET_KEY = process.env.JWT_SECRET;
 exports.getAllUsers = async (req, res, next) => {
@@ -8,7 +9,7 @@ exports.getAllUsers = async (req, res, next) => {
     const allUsers = await PortFolio_Auth.find({});
     res.status(200).json({ status: "ok", data: allUsers });
   } catch (error) {
-    next(error);
+    res.status(500).json({ status: "error", message: "Internal server error" });
   }
 };
 exports.getUserByID = async (req, res, next) => {
@@ -16,7 +17,7 @@ exports.getUserByID = async (req, res, next) => {
     const user = await PortFolio_Auth.findById(req.params.id);
     res.status(200).json({ status: "ok", data: user });
   } catch (error) {
-    next(error);
+    res.status(500).json({ status: "error", message: "Internal server error" });
   }
 };
 exports.register = async (req, res, next) => {
@@ -78,7 +79,7 @@ exports.register = async (req, res, next) => {
         .json({ status: "error", message: "All fields are Mandatory" });
     }
   } catch (error) {
-    next(error);
+    res.status(500).json({ status: "error", message: "Internal server error" });
   }
 };
 exports.login = async (req, res, next) => {
@@ -96,7 +97,7 @@ exports.login = async (req, res, next) => {
       res.status(200).json({ status: "error", message: "Invalid credentials" });
     }
   } catch (error) {
-    next(error);
+    res.status(500).json({ status: "error", message: "Internal server error" });
   }
 };
 exports.userData = async (req, res, next) => {
@@ -111,7 +112,19 @@ exports.userData = async (req, res, next) => {
 
     const user = await PortFolio_Auth.findById(decoded.userId);
     if (user) {
-      res.status(200).json({ status: "ok", data: user });
+      res.status(200).json({
+        status: "ok",
+        data: {
+          accessToken: token,
+          _id: user._id,
+          name: user.name,
+          email: user.email,
+          gender: user.gender,
+          role: user.role,
+          password: user.password,
+          image: user.image,
+        },
+      });
     } else {
       res.status(200).json({ status: "error", message: "User not found" });
     }
@@ -123,14 +136,84 @@ exports.userData = async (req, res, next) => {
   }
 };
 exports.updateUser = async (req, res, next) => {
+  const { name, password, email } = req.body;
+
   try {
+    if (Authentication(req)) {
+      const DATA = req.body;
+      if (email && name && password) {
+        if (req.file) {
+          const uploadRes = await cloudinary.uploader.upload(
+            req.file.path,
+            {
+              upload_preset: "Portfolio_profile",
+            },
+            (error, result) => {
+              if (error) {
+                return res.status(200).json({
+                  status: "error",
+                  message: "Image Should not exceed 70MB",
+                });
+              } else {
+                console.log(
+                  "Image uploaded to Cloudinary successfully:",
+                  result
+                );
+                // Here you can use the result variable which contains details about the uploaded image
+              }
+            }
+          );
+          if (uploadRes) {
+            DATA.image = {
+              url: uploadRes.secure_url,
+              public_id: uploadRes.public_id,
+            };
+            const result = await PortFolio_Auth.findByIdAndUpdate(
+              req.query.userID,
+              DATA
+            );
+            const newRes = await PortFolio_Auth.findById(req.query.userID);
+
+            res.status(200).json({
+              status: "ok",
+              data: "User Registerd Successfully",
+              data: newRes,
+            });
+          }
+        } else {
+          const result = await PortFolio_Auth.findByIdAndUpdate(
+            req.query.userID,
+            DATA
+          );
+          if (result) {
+            const newRes = await PortFolio_Auth.findById(req.query.userID);
+            console.log(newRes);
+            res.status(200).json({
+              status: "ok",
+              message: "User Updated Successfully",
+              data: newRes,
+            });
+          } else {
+            res
+              .status(200)
+              .json({ status: "error", message: "Something went wrong" });
+          }
+        }
+      } else {
+        res
+          .status(200)
+          .json({ status: "error", message: "All fields are Mandatory" });
+      }
+    } else {
+      res.status(401).json({ status: "error", message: "Unauthorized" });
+    }
   } catch (error) {
-    next(error);
+    res.status(500).json({ status: "error", message: "Internal server error" });
   }
 };
 exports.deleteUser = async (req, res, next) => {
   try {
   } catch (error) {
-    next(error);
+    res.status(500).json({ status: "error", message: "Internal server error" });
   }
 };
