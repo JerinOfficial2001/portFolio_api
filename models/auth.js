@@ -6,6 +6,12 @@ const portFolioAuthSchema = new mongoose.Schema({
   password: { type: String, required: true },
   role: { type: String, required: true },
   gender: String,
+  project_categories: [
+    {
+      type: mongoose.Types.ObjectId,
+      ref: "PortFolio_ProjectCategories",
+    },
+  ],
 });
 const PortFolio_Auth = mongoose.model("PortFolio_Auth", portFolioAuthSchema);
 exports.PortFolio_Auth = PortFolio_Auth;

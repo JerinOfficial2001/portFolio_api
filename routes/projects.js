@@ -9,6 +9,8 @@ const {
 } = require("../controllers/projects");
 const router = express.Router();
 const multer = require("multer");
+const cloudinary = require("../utils/cloudinary");
+const { CloudinaryStorage } = require("multer-storage-cloudinary");
 
 const fileStorageEngine = multer.diskStorage({
   destination: (req, file, cb) => {
@@ -18,17 +20,23 @@ const fileStorageEngine = multer.diskStorage({
     cb(null, Date.now() + "_" + file.originalname);
   },
 });
-const fileFilter = (req, file, cb) => {
-  // Check if the file is an array of objects (files)
-  if (Array.isArray(req.files)) {
-    cb(null, true); // Allow saving the files
-  } else {
-    // Reject the request if the file is an array of strings
-    cb(new Error("Invalid file format. Expected an array of objects."));
-  }
-};
-const upload = multer({ storage: fileStorageEngine });
-router.post("/add", upload.single("image"), addProject);
+
+const storage = new CloudinaryStorage({
+  cloudinary: cloudinary,
+  params: {
+    folder: "Portfolio_project",
+  },
+});
+
+const upload = multer({ storage: storage });
+router.post(
+  "/add",
+  upload.fields([
+    { name: "image", maxCount: 1 }, // For single image
+    { name: "images" }, // For multiple images (up to 5)
+  ]),
+  addProject
+);
 router.get("/get/:id", getProjects);
 router.get("/getByID/:id", getProjectByID);
 router.delete("/remove/:id", removeProject);
