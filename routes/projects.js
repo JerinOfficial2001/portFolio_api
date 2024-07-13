@@ -31,16 +31,17 @@ const storage = new CloudinaryStorage({
 const upload = multer({ storage: storage });
 router.post(
   "/add",
-  upload.fields([
-    { name: "image", maxCount: 1 }, // For single image
-    { name: "images" }, // For multiple images (up to 5)
-  ]),
+  upload.fields([{ name: "image", maxCount: 1 }, { name: "images" }]),
   addProject
 );
 router.get("/get/:id", getProjects);
 router.get("/getByID/:id", getProjectByID);
 router.delete("/remove/:id", removeProject);
-router.put("/update/:id", upload.single("image"), updateProject);
+router.put(
+  "/update/:id",
+  upload.fields([{ name: "image", maxCount: 1 }, { name: "images" }]),
+  updateProject
+);
 router.put("/visibility/:id", updateVisiblity);
 
 module.exports = router;

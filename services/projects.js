@@ -121,3 +121,209 @@ exports.addApplication = async (req, res) => {
     console.log(error);
   }
 };
+exports.updateWebsite = async (req, res) => {
+  const singleImage = req.files["image"][0];
+  const multiImages = req.files["images"];
+  const { title, endpoint, link, userID, isVisible, credentials } = req.body;
+  try {
+    if (title && endpoint && link && userID) {
+      const Project = await PortFolio_Projects.findById(req.params.id);
+      if (Project) {
+        if (singleImage) {
+          if (Project.image) {
+            const imgID = Project.image.public_id;
+            const { result } = await cloudinary.uploader.destroy(imgID);
+            if (result != "ok") {
+              return res
+                .status(200)
+                .json({ status: "error", message: "Image deletion failed" });
+            }
+          }
+
+          const updatedData = {
+            isVisible: isVisible || true,
+            image: {
+              url: singleImage.path,
+              public_id: singleImage.path
+                .split("/")
+                .slice(-2)
+                .join("/")
+                .replace(/\.\w+$/, ""),
+              mimetype: singleImage.mimetype,
+              originalname: singleImage.originalname,
+              size: singleImage.size,
+            },
+            title,
+            endpoint: endpoint ? JSON.parse(endpoint) : [],
+            link,
+            userID,
+            credentials: req.body.credentials
+              ? JSON.parse(req.body.credentials)
+              : null,
+          };
+          const result = await PortFolio_Projects.findByIdAndUpdate(
+            req.params.id,
+            updatedData,
+            { new: true }
+          );
+          if (result) {
+            res.status(200).json({
+              status: "ok",
+              message: "Project Updated Successfully",
+            });
+          } else {
+            return res
+              .status(200)
+              .json({ status: "error", message: "Something went wrong" });
+          }
+        } else {
+          const updatedData = {
+            isVisible: isVisible || true,
+            image: Project.image,
+            title,
+            endpoint: endpoint ? JSON.parse(endpoint) : [],
+            link,
+            userID,
+            credentials: req.body.credentials
+              ? JSON.parse(req.body.credentials)
+              : null,
+          };
+          const result = await PortFolio_Projects.findByIdAndUpdate(
+            req.params.id,
+            updatedData,
+            { new: true }
+          );
+          if (result) {
+            res.status(200).json({
+              status: "ok",
+              message: "Project Updated Successfully",
+            });
+          } else {
+            return res
+              .status(200)
+              .json({ status: "error", message: "Something went wrong" });
+          }
+        }
+      } else {
+        res.status(404).json({ status: "error", message: "Project Not Found" });
+      }
+    } else {
+      res.status(400).json({
+        status: "error",
+        message: "All fields are mandatory and at least one file is required",
+      });
+    }
+  } catch (error) {
+    next(error);
+  }
+};
+exports.updateApplication = async (req, res) => {
+  const { title, userID, isVisible, tools, description, category } = req.body;
+  try {
+    const singleImage = req.files["image"][0];
+    const multiImages = req.files["images"];
+    if (description && title && userID && category && tools.length !== 0) {
+      const DATA = {
+        isVisible: isVisible ? isVisible : true,
+        title,
+        userID,
+        tools: req.body.tools ? JSON.parse(req.body.tools) : [],
+        description,
+        category,
+      };
+      const project = await PortFolio_Projects.findById(req.params.id);
+      if (project) {
+        if (singleImage) {
+          if (project.image) {
+            const { result } = await cloudinary.uploader.destroy(
+              project.image.public_id
+            );
+            if (result != "ok") {
+              return res
+                .status(200)
+                .json({ status: "error", message: "Image deletion failed" });
+            }
+          }
+          project.image = {
+            url: singleImage.path,
+            public_id: singleImage.path
+              .split("/")
+              .slice(-2)
+              .join("/")
+              .replace(/\.\w+$/, ""),
+            mimetype: singleImage.mimetype,
+            originalname: singleImage.originalname,
+            size: singleImage.size,
+          };
+        } else {
+          DATA.image = project.image;
+        }
+        if (req.body.deletedIds && req.body.deletedIds.length > 0) {
+          req.body.deletedIds.map(async (elem) => {
+            const { result } = await cloudinary.uploader.destroy(elem);
+            if (result != "ok") {
+              return res
+                .status(200)
+                .json({ status: "error", message: "Image deletion failed" });
+            }
+          });
+        }
+        if (multiImages) {
+          if (project.images.length !== 0) {
+            project.images = project.images.concat(
+              multiImages.map((elem) => ({
+                url: elem.path,
+                public_id: elem.path
+                  .split("/")
+                  .slice(-2)
+                  .join("/")
+                  .replace(/\.\w+$/, ""),
+                mimetype: elem.mimetype,
+                originalname: elem.originalname,
+                size: elem.size,
+              }))
+            );
+          } else {
+            multiImages.map((elem) => {
+              project.images.push({
+                url: elem.path,
+                public_id: elem.path
+                  .split("/")
+                  .slice(-2)
+                  .join("/")
+                  .replace(/\.\w+$/, ""),
+                mimetype: elem.mimetype,
+                originalname: elem.originalname,
+                size: elem.size,
+              });
+            });
+          }
+        } else {
+          DATA.images = req.body.images ? JSON.parse(req.body.images) : [];
+        }
+        const result = await PortFolio_Projects.findByIdAndUpdate(
+          req.params.id,
+          DATA
+        );
+        if (result) {
+          res.status(200).json({
+            status: "ok",
+            message: "Project Updated Successfully",
+          });
+        } else {
+          res
+            .status(200)
+            .json({ status: "error", message: "Something went wrong" });
+        }
+      } else {
+        res.status(200).json({ status: "error", message: "Project not found" });
+      }
+    } else {
+      res
+        .status(200)
+        .json({ status: "error", message: "All fields are Mandatory" });
+    }
+  } catch (error) {
+    console.log(error);
+  }
+};
