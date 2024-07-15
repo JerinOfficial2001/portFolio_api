@@ -123,59 +123,63 @@ exports.uploadApk = async (req, res) => {
   const userID = req.query.userID;
   const projectID = req.query.projectID;
   try {
-    const db = client.db("test");
+    if (projectID) {
+      const db = client.db("test");
 
-    const filesCollection = db.collection("fs.files");
-    const files = await filesCollection.find().toArray();
-    const fileMetadata = files.map((file) => ({
-      filename: file.filename,
-      fileId: file._id,
-      metadata: file.metadata,
-    }));
-    const bucket = new GridFSBucket(db);
-    const myAPK = fileMetadata.find((i) => i.metadata.projectID == projectID);
-    if (myAPK) {
-      await bucket.delete(myAPK.fileId);
-    }
-    if (req.file) {
-      const filename = req.file.originalname;
-      const fileBuffer = req.file.buffer;
+      const filesCollection = db.collection("fs.files");
+      const files = await filesCollection.find().toArray();
+      const fileMetadata = files.map((file) => ({
+        filename: file.filename,
+        fileId: file._id,
+        metadata: file.metadata,
+      }));
+      const bucket = new GridFSBucket(db);
+      const myAPK = fileMetadata.find((i) => i.metadata.projectID == projectID);
+      if (myAPK) {
+        await bucket.delete(myAPK.fileId);
+      }
+      if (req.file) {
+        const filename = req.file.originalname;
+        const fileBuffer = req.file.buffer;
 
-      const uploadStream = bucket.openUploadStream(filename, {
-        metadata: {
-          userID: userID,
-          projectID: projectID,
-        },
-      });
-
-      const fileId = uploadStream.id;
-      let uploadedBytes = 0;
-      const fileSize = fileBuffer.length;
-
-      uploadStream.on("data", (chunk) => {
-        uploadedBytes += chunk.length;
-        const progress = Math.round((uploadedBytes / fileSize) * 100);
-        console.log(`Progress: ${progress}%`);
-      });
-
-      uploadStream.end(fileBuffer);
-
-      uploadStream.on("finish", () => {
-        console.log(
-          `File ${filename} uploaded successfully with id: ${fileId}`
-        );
-        res.status(200).json({ status: "ok", fileId });
-      });
-
-      uploadStream.on("error", (err) => {
-        console.error("Error uploading file to MongoDB Atlas:", err);
-        res.status(200).json({
-          status: "ok",
-          message: "Error uploading file to MongoDB Atlas",
+        const uploadStream = bucket.openUploadStream(filename, {
+          metadata: {
+            userID: userID,
+            projectID: projectID,
+          },
         });
-      });
+
+        const fileId = uploadStream.id;
+        let uploadedBytes = 0;
+        const fileSize = fileBuffer.length;
+
+        uploadStream.on("data", (chunk) => {
+          uploadedBytes += chunk.length;
+          const progress = Math.round((uploadedBytes / fileSize) * 100);
+          console.log(`Progress: ${progress}%`);
+        });
+
+        uploadStream.end(fileBuffer);
+
+        uploadStream.on("finish", () => {
+          console.log(
+            `File ${filename} uploaded successfully with id: ${fileId} to Project id:${projectID}`
+          );
+          res.status(200).json({ status: "ok", fileId, projectID });
+        });
+
+        uploadStream.on("error", (err) => {
+          console.error("Error uploading file to MongoDB Atlas:", err);
+          res.status(200).json({
+            status: "ok",
+            message: "Error uploading file to MongoDB Atlas",
+          });
+        });
+      } else {
+        res.status(200).json({ status: "error", message: "Invalid file" });
+      }
     } else {
-      res.status(200).json({ status: "error", message: "Invalid file" });
+      res.status(200).json({ status: "error", message: "Project Id required" });
     }
   } catch (err) {
     console.error("Error connecting to MongoDB Atlas:", err);
