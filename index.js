@@ -37,14 +37,11 @@ app.get("/", (req, res) => {
 });
 
 mongoose
-  .connect(MONGO, { useNewUrlParser: true, useUnifiedTopology: true })
+  .connect(MONGO)
   .then(() => console.log("MongoDB connected"))
   .catch((err) => console.error("MongoDB connection error:", err));
 
-const client = new MongoClient(MONGO, {
-  useNewUrlParser: true,
-  useUnifiedTopology: true,
-});
+const client = new MongoClient(MONGO);
 
 // Multer setup for file upload
 const storage = multer.memoryStorage();

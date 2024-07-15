@@ -220,11 +220,11 @@ exports.updateWebsite = async (req, res) => {
 exports.updateApplication = async (req, res) => {
   const { title, userID, isVisible, tools, description, category } = req.body;
   try {
-    const singleImage = req.files["image"][0];
+    const singleImage = req.files["image"] ? req.files["image"][0] : null;
     const multiImages = req.files["images"];
     if (description && title && userID && category && tools.length !== 0) {
       const DATA = {
-        isVisible: isVisible ? isVisible : true,
+        isVisible: isVisible || true,
         title,
         userID,
         tools: req.body.tools ? JSON.parse(req.body.tools) : [],
@@ -232,9 +232,12 @@ exports.updateApplication = async (req, res) => {
         category,
       };
       const project = await PortFolio_Projects.findById(req.params.id);
+      const deletedIds = req.body.deletedIds
+        ? JSON.parse(req.body.deletedIds)
+        : [];
       if (project) {
         if (singleImage) {
-          if (project.image) {
+          if (project.image && project.image.public_id) {
             const { result } = await cloudinary.uploader.destroy(
               project.image.public_id
             );
@@ -244,7 +247,7 @@ exports.updateApplication = async (req, res) => {
                 .json({ status: "error", message: "Image deletion failed" });
             }
           }
-          project.image = {
+          DATA.image = {
             url: singleImage.path,
             public_id: singleImage.path
               .split("/")
@@ -258,8 +261,8 @@ exports.updateApplication = async (req, res) => {
         } else {
           DATA.image = project.image;
         }
-        if (req.body.deletedIds && req.body.deletedIds.length > 0) {
-          req.body.deletedIds.map(async (elem) => {
+        if (deletedIds.length > 0) {
+          deletedIds.map(async (elem) => {
             const { result } = await cloudinary.uploader.destroy(elem);
             if (result != "ok") {
               return res
@@ -270,7 +273,7 @@ exports.updateApplication = async (req, res) => {
         }
         if (multiImages) {
           if (project.images.length !== 0) {
-            project.images = project.images.concat(
+            DATA.images = project.images.concat(
               multiImages.map((elem) => ({
                 url: elem.path,
                 public_id: elem.path
@@ -285,7 +288,7 @@ exports.updateApplication = async (req, res) => {
             );
           } else {
             multiImages.map((elem) => {
-              project.images.push({
+              DATA.images.push({
                 url: elem.path,
                 public_id: elem.path
                   .split("/")
@@ -299,7 +302,8 @@ exports.updateApplication = async (req, res) => {
             });
           }
         } else {
-          DATA.images = req.body.images ? JSON.parse(req.body.images) : [];
+          DATA.images = req.body.images;
+          //? JSON.parse(req.body.images) : [];
         }
         const result = await PortFolio_Projects.findByIdAndUpdate(
           req.params.id,
