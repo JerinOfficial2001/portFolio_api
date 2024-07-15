@@ -6,6 +6,11 @@ const {
   updateProject,
   getProjectByID,
   updateVisiblity,
+  uploadApk,
+  getApk,
+  downloadAPK,
+  deleteAPK,
+  getAPKbyName,
 } = require("../controllers/projects");
 const router = express.Router();
 const multer = require("multer");
@@ -27,7 +32,8 @@ const storage = new CloudinaryStorage({
     folder: "Portfolio_project",
   },
 });
-
+const apkStorage = multer.memoryStorage();
+const uploadAPK = multer({ storage: apkStorage });
 const upload = multer({ storage: storage });
 router.post(
   "/add",
@@ -43,5 +49,10 @@ router.put(
   updateProject
 );
 router.put("/visibility/:id", updateVisiblity);
-
+//*apk
+router.post("/uploadapk", uploadAPK.single("file"), uploadApk);
+router.get("/getapk", getApk);
+router.get("/getapkbyname/:name", getAPKbyName);
+router.get("/downloadapk/:id", downloadAPK);
+router.delete("/deleteapk/:id", deleteAPK);
 module.exports = router;

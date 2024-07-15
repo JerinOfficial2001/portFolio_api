@@ -230,6 +230,7 @@ exports.updateApplication = async (req, res) => {
         tools: req.body.tools ? JSON.parse(req.body.tools) : [],
         description,
         category,
+        apk_id: req.body.apk_id,
       };
       const project = await PortFolio_Projects.findById(req.params.id);
       const deletedIds = req.body.deletedIds
@@ -287,6 +288,12 @@ exports.updateApplication = async (req, res) => {
               }))
             );
           } else {
+            if (!project.images) {
+              project.images = [];
+            }
+            if (!DATA.images) {
+              DATA.images = [];
+            }
             multiImages.map((elem) => {
               DATA.images.push({
                 url: elem.path,
@@ -302,8 +309,7 @@ exports.updateApplication = async (req, res) => {
             });
           }
         } else {
-          DATA.images = req.body.images;
-          //? JSON.parse(req.body.images) : [];
+          DATA.images = project.images;
         }
         const result = await PortFolio_Projects.findByIdAndUpdate(
           req.params.id,

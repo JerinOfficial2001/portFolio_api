@@ -1,4 +1,7 @@
 const { PortFolio_Projects } = require("../models/Projects/projects");
+const { GridFSBucket, MongoClient } = require("mongodb");
+const { ObjectId } = require("mongodb");
+
 const {
   addWebsite,
   addApplication,
@@ -6,7 +9,11 @@ const {
   updateApplication,
 } = require("../services/projects");
 const cloudinary = require("../utils/cloudinary");
+const Grid = require("gridfs-stream");
 const BASE_URL = process.env.BASE_URL;
+const MONGO = process.env.MONGODB;
+const client = new MongoClient(MONGO);
+
 exports.addProject = async (req, res) => {
   const { category } = req.body;
   try {
@@ -110,5 +117,148 @@ exports.updateVisiblity = async (req, res, next) => {
     }
   } catch (error) {
     next(error);
+  }
+};
+exports.uploadApk = async (req, res) => {
+  const userID = req.query.userID;
+  try {
+    const db = client.db("test");
+
+    const filesCollection = db.collection("fs.files");
+    const files = await filesCollection.find().toArray();
+    const fileMetadata = files.map((file) => ({
+      filename: file.filename,
+      fileId: file._id,
+      metadata: file.metadata,
+    }));
+    const bucket = new GridFSBucket(db);
+    const myAPK = fileMetadata.find((i) => i.metadata.userID == userID);
+    if (myAPK) {
+      await bucket.delete(myAPK.fileId);
+    }
+    if (req.file) {
+      const filename = req.file.originalname;
+      const fileBuffer = req.file.buffer;
+
+      const uploadStream = bucket.openUploadStream(filename, {
+        metadata: {
+          userID: userID,
+        },
+      });
+
+      const fileId = uploadStream.id;
+      let uploadedBytes = 0;
+      const fileSize = fileBuffer.length;
+
+      uploadStream.on("data", (chunk) => {
+        uploadedBytes += chunk.length;
+        const progress = Math.round((uploadedBytes / fileSize) * 100);
+        console.log(`Progress: ${progress}%`);
+      });
+
+      uploadStream.end(fileBuffer);
+
+      uploadStream.on("finish", () => {
+        console.log(
+          `File ${filename} uploaded successfully with id: ${fileId}`
+        );
+        res.status(200).json({ status: "ok", fileId });
+      });
+
+      uploadStream.on("error", (err) => {
+        console.error("Error uploading file to MongoDB Atlas:", err);
+        res.status(200).json({
+          status: "ok",
+          message: "Error uploading file to MongoDB Atlas",
+        });
+      });
+    } else {
+      res.status(200).json({ status: "error", message: "Invalid file" });
+    }
+  } catch (err) {
+    console.error("Error connecting to MongoDB Atlas:", err);
+    res.status(500).send("Error connecting to MongoDB Atlas");
+  }
+};
+exports.getApk = async (req, res) => {
+  const userID = req.query.userID;
+
+  try {
+    const db = client.db("test");
+    const filesCollection = db.collection("fs.files");
+
+    const files = await filesCollection.find().toArray();
+
+    const fileMetadata = files.map((file) => ({
+      filename: file.filename,
+      fileId: file._id,
+      metadata: file.metadata,
+    }));
+    const apk = fileMetadata.find((i) => i.metadata.userID == userID);
+    if (apk) {
+      res.status(200).json({ status: "ok", data: apk });
+    } else {
+      res.status(200).json({ status: "error", message: "File not found" });
+    }
+  } catch (err) {
+    console.error("Error retrieving files from MongoDB Atlas:", err);
+    res.status(500).send("Error retrieving files from MongoDB Atlas");
+  }
+};
+exports.downloadAPK = async (req, res) => {
+  try {
+    const db = client.db("test");
+    const bucket = new GridFSBucket(db);
+    const ID = req.params.id;
+    const fileId = new ObjectId(ID);
+
+    const file = await db.collection("fs.files").findOne({ _id: fileId });
+    if (!file) {
+      return res
+        .status(200)
+        .json({ status: "error", message: "File not found" });
+    }
+
+    res.set("Content-Type", file.contentType);
+    res.set("Content-Disposition", `attachment; filename="${file.filename}"`);
+
+    const downloadStream = bucket.openDownloadStream(fileId);
+    downloadStream.pipe(res);
+  } catch (err) {
+    console.error("Error downloading file from MongoDB Atlas:", err);
+    res.status(500).send("Error downloading file from MongoDB Atlas");
+  }
+};
+exports.deleteAPK = async (req, res) => {
+  try {
+    const db = client.db("test"); // Replace with your database name
+    const bucket = new GridFSBucket(db);
+
+    const fileId = new ObjectId(req.params.id);
+
+    // Delete the file from GridFS
+    await bucket.delete(fileId);
+
+    res.status(200).json({
+      status: "ok",
+      message: `File with ID ${fileId} deleted successfully`,
+    });
+  } catch (err) {
+    console.error("Error deleting file from MongoDB Atlas:", err);
+    res.status(500).send("Error deleting file from MongoDB Atlas");
+  }
+};
+exports.getAPKbyName = async (req, res) => {
+  try {
+    const db = client.db("test"); // Replace with your database name
+    const gfs = Grid(db, MongoClient);
+
+    const filename = req.params.name;
+
+    const downloadStream = gfs.createReadStream({ filename: filename });
+    downloadStream.pipe(res);
+  } catch (err) {
+    console.error("Error retrieving file from MongoDB Atlas:", err);
+    res.status(500).send("Error retrieving file from MongoDB Atlas");
   }
 };
