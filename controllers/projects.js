@@ -121,6 +121,7 @@ exports.updateVisiblity = async (req, res, next) => {
 };
 exports.uploadApk = async (req, res) => {
   const userID = req.query.userID;
+  const projectID = req.query.projectID;
   try {
     const db = client.db("test");
 
@@ -132,7 +133,7 @@ exports.uploadApk = async (req, res) => {
       metadata: file.metadata,
     }));
     const bucket = new GridFSBucket(db);
-    const myAPK = fileMetadata.find((i) => i.metadata.userID == userID);
+    const myAPK = fileMetadata.find((i) => i.metadata.projectID == projectID);
     if (myAPK) {
       await bucket.delete(myAPK.fileId);
     }
@@ -143,6 +144,7 @@ exports.uploadApk = async (req, res) => {
       const uploadStream = bucket.openUploadStream(filename, {
         metadata: {
           userID: userID,
+          projectID: projectID,
         },
       });
 
@@ -181,7 +183,7 @@ exports.uploadApk = async (req, res) => {
   }
 };
 exports.getApk = async (req, res) => {
-  const userID = req.query.userID;
+  const projectID = req.query.projectID;
 
   try {
     const db = client.db("test");
@@ -194,7 +196,7 @@ exports.getApk = async (req, res) => {
       fileId: file._id,
       metadata: file.metadata,
     }));
-    const apk = fileMetadata.find((i) => i.metadata.userID == userID);
+    const apk = fileMetadata.find((i) => i.metadata.projectID == projectID);
     if (apk) {
       res.status(200).json({ status: "ok", data: apk });
     } else {
