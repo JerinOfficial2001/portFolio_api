@@ -106,6 +106,7 @@ exports.addApplication = async (req, res) => {
         res.status(200).json({
           status: "ok",
           message: "Project Added Successfully",
+          id: result._id,
         });
       } else {
         res
