@@ -14,37 +14,26 @@ exports.addProfile = async (req, res, next) => {
           .json({ status: "error", message: "Profile Already Exists" });
       }
       if (req.file) {
-        const uploadRes = await cloudinary.uploader.upload(
-          req.file.path,
-          {
-            upload_preset: "Portfolio_profile",
-          },
-          (error, result) => {
-            if (error) {
-              return res.status(200).json({
-                status: "error",
-                message: "Image Should not exceed 70MB",
-              });
-            } else {
-              console.log("Image uploaded to Cloudinary successfully:", result);
-              // Here you can use the result variable which contains details about the uploaded image
-            }
-          }
-        );
         const userData = await PortFolio_Auth.findById(DATA.userID);
-        if (uploadRes) {
-          DATA.image = {
-            url: uploadRes.secure_url,
-            public_id: uploadRes.public_id,
-          };
-          DATA.gender = userData.gender;
-          const newVal = new PortFolio_Profile(DATA);
-          const result = await newVal.save();
-          res.status(200).json({
-            status: "ok",
-            message: "Profile Added Successfully",
-          });
-        }
+
+        DATA.image = {
+          url: req.file.path,
+          public_id: req.file.path
+            .split("/")
+            .slice(-2)
+            .join("/")
+            .replace(/\.\w+$/, ""),
+          mimetype: req.file.mimetype,
+          originalname: req.file.originalname,
+          size: req.file.size,
+        };
+        DATA.gender = userData.gender;
+        const newVal = new PortFolio_Profile(DATA);
+        const result = await newVal.save();
+        res.status(200).json({
+          status: "ok",
+          message: "Profile Added Successfully",
+        });
       } else {
         res.status(200).json({
           status: "error",
@@ -84,39 +73,34 @@ exports.updateProfile = async (req, res, next) => {
       if (imgID) {
         await cloudinary.uploader.destroy(imgID);
       }
-      const newImg = await cloudinary.uploader.upload(
-        req.file.path,
-        {
-          upload_preset: "Portfolio_profile",
-        },
-        (err, imgResult) => {
-          if (err) {
-            return res.send({ status: "error", message: err });
-          } else {
-            return imgResult;
-          }
-        }
-      );
+
       const userData = await PortFolio_Auth.findById(userID);
-      if (newImg) {
-        const NewObj = {
-          name,
-          role,
-          qualification,
-          about,
-          image,
-          from,
-          userID,
-        };
-        NewObj.image = { public_id: newImg.public_id, url: newImg.secure_url };
-        NewObj.gender = userData.gender;
-        await PortFolio_Profile.findByIdAndUpdate(req.params.id, NewObj, {
-          new: true,
-        });
-        res.send({ status: "ok", message: "Profile Updated successfully" });
-      } else {
-        res.send({ status: "error", message: "Something went wrong" });
-      }
+
+      const NewObj = {
+        name,
+        role,
+        qualification,
+        about,
+        image,
+        from,
+        userID,
+      };
+      NewObj.image = {
+        url: req.file.path,
+        public_id: req.file.path
+          .split("/")
+          .slice(-2)
+          .join("/")
+          .replace(/\.\w+$/, ""),
+        mimetype: req.file.mimetype,
+        originalname: req.file.originalname,
+        size: req.file.size,
+      };
+      NewObj.gender = userData.gender;
+      await PortFolio_Profile.findByIdAndUpdate(req.params.id, NewObj, {
+        new: true,
+      });
+      res.send({ status: "ok", message: "Profile Updated successfully" });
     } else {
       const userData = await PortFolio_Auth.findById(userID);
       const NewObj = {

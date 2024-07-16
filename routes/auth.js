@@ -11,16 +11,17 @@ const {
 const router = express.Router();
 const multer = require("multer");
 
-const fileStorageEngine = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, "Public/auth");
-  },
-  filename: (req, file, cb) => {
-    cb(null, Date.now() + "_" + file.originalname);
+const { CloudinaryStorage } = require("multer-storage-cloudinary");
+const cloudinary = require("../utils/cloudinary");
+
+const storage = new CloudinaryStorage({
+  cloudinary: cloudinary,
+  params: {
+    folder: "Portfolio_profile",
   },
 });
 
-const upload = multer({ storage: fileStorageEngine });
+const upload = multer({ storage: storage });
 router.post("/login", login);
 router.post("/register", upload.single("image"), register);
 router.get("/userData", userData);

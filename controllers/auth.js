@@ -32,35 +32,23 @@ exports.register = async (req, res, next) => {
           .json({ status: "error", message: "User Already Exists" });
       }
       if (req.file) {
-        const uploadRes = await cloudinary.uploader.upload(
-          req.file.path,
-          {
-            upload_preset: "Portfolio_profile",
-          },
-          (error, result) => {
-            if (error) {
-              return res.status(200).json({
-                status: "error",
-                message: "Image Should not exceed 70MB",
-              });
-            } else {
-              console.log("Image uploaded to Cloudinary successfully:", result);
-              // Here you can use the result variable which contains details about the uploaded image
-            }
-          }
-        );
-        if (uploadRes) {
-          DATA.image = {
-            url: uploadRes.secure_url,
-            public_id: uploadRes.public_id,
-          };
-          const newVal = new PortFolio_Auth(DATA);
-          const result = await newVal.save();
-          res.status(200).json({
-            status: "ok",
-            data: "User Registerd Successfully",
-          });
-        }
+        DATA.image = {
+          url: req.file.path,
+          public_id: req.file.path
+            .split("/")
+            .slice(-2)
+            .join("/")
+            .replace(/\.\w+$/, ""),
+          mimetype: req.file.mimetype,
+          originalname: req.file.originalname,
+          size: req.file.size,
+        };
+        const newVal = new PortFolio_Auth(DATA);
+        const result = await newVal.save();
+        res.status(200).json({
+          status: "ok",
+          data: "User Registerd Successfully",
+        });
       } else {
         const result = await PortFolio_Auth.create(DATA);
         if (result) {
@@ -141,45 +129,36 @@ exports.updateUser = async (req, res, next) => {
   try {
     if (Authentication(req)) {
       const DATA = req.body;
+      const userData = await PortFolio_Auth.findById(req.query.userID);
+
       if (email && name && password) {
         if (req.file) {
-          const uploadRes = await cloudinary.uploader.upload(
-            req.file.path,
-            {
-              upload_preset: "Portfolio_profile",
-            },
-            (error, result) => {
-              if (error) {
-                return res.status(200).json({
-                  status: "error",
-                  message: "Image Should not exceed 70MB",
-                });
-              } else {
-                console.log(
-                  "Image uploaded to Cloudinary successfully:",
-                  result
-                );
-                // Here you can use the result variable which contains details about the uploaded image
-              }
-            }
-          );
-          if (uploadRes) {
-            DATA.image = {
-              url: uploadRes.secure_url,
-              public_id: uploadRes.public_id,
-            };
-            const result = await PortFolio_Auth.findByIdAndUpdate(
-              req.query.userID,
-              DATA
-            );
-            const newRes = await PortFolio_Auth.findById(req.query.userID);
-
-            res.status(200).json({
-              status: "ok",
-              data: "User Registerd Successfully",
-              data: newRes,
-            });
+          const imgID = userData.image.public_id;
+          if (imgID) {
+            await cloudinary.uploader.destroy(imgID);
           }
+          DATA.image = {
+            url: req.file.path,
+            public_id: req.file.path
+              .split("/")
+              .slice(-2)
+              .join("/")
+              .replace(/\.\w+$/, ""),
+            mimetype: req.file.mimetype,
+            originalname: req.file.originalname,
+            size: req.file.size,
+          };
+          const result = await PortFolio_Auth.findByIdAndUpdate(
+            req.query.userID,
+            DATA
+          );
+          const newRes = await PortFolio_Auth.findById(req.query.userID);
+
+          res.status(200).json({
+            status: "ok",
+            message: "User Updated Successfully",
+            data: newRes,
+          });
         } else {
           const result = await PortFolio_Auth.findByIdAndUpdate(
             req.query.userID,

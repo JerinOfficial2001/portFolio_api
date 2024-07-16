@@ -1,6 +1,6 @@
 const mongoose = require("mongoose");
 const portFolio_CredentialSchema = new mongoose.Schema({
-  image: { type: Object, required: true },
+  image: { type: Object },
   userID: { type: String, required: true },
   education: { type: Array, required: true },
   skills: { type: Array, required: true },

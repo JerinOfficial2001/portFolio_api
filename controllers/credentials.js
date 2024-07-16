@@ -10,45 +10,34 @@ exports.addCredentials = async (req, res, next) => {
       const user = await PortFolio_Credential.findOne({ userID });
 
       if (req.file && !user) {
-        const uploadRes = await cloudinary.uploader.upload(
-          req.file.path,
-          {
-            upload_preset: "Portfolio_profile",
+        const newVal = new PortFolio_Credential({
+          image: {
+            url: req.file.path,
+            public_id: req.file.path
+              .split("/")
+              .slice(-2)
+              .join("/")
+              .replace(/\.\w+$/, ""),
+            mimetype: req.file.mimetype,
+            originalname: req.file.originalname,
+            size: req.file.size,
           },
-          (error, result) => {
-            if (error) {
-              return res.status(200).json({
-                status: "error",
-                message: "Image Should not exceed 70MB",
-              });
-            } else {
-              return result;
-            }
-          }
-        );
-        if (uploadRes) {
-          const newVal = new PortFolio_Credential({
-            image: {
-              url: uploadRes.secure_url,
-              public_id: uploadRes.public_id,
-            },
-            education: JSON.parse(req.body.education),
-            skills: JSON.parse(req.body.skills),
-            link: JSON.parse(req.body.link),
-            userID: req.body.userID,
+          education: JSON.parse(req.body.education),
+          skills: JSON.parse(req.body.skills),
+          link: JSON.parse(req.body.link),
+          userID: req.body.userID,
+        });
+        const result = await newVal.save();
+        if (result) {
+          res.status(200).json({
+            status: "ok",
+            message: "Credential Added Successfully",
           });
-          const result = await newVal.save();
-          if (result) {
-            res.status(200).json({
-              status: "ok",
-              message: "Credential Added Successfully",
-            });
-          } else {
-            res.status(200).json({
-              status: "error",
-              message: "Something went wrong",
-            });
-          }
+        } else {
+          res.status(200).json({
+            status: "error",
+            message: "Something went wrong",
+          });
         }
       } else if (!user) {
         const result = await PortFolio_Credential.create(req.body);
@@ -76,45 +65,42 @@ exports.updateCredentials = async (req, res, next) => {
   const { userID, education, skills, link } = req.body;
   try {
     const Credentials = await PortFolio_Credential.findById(req.params.id);
-    const imgID = Credentials.image.public_id;
-
+    const imgID =
+      Credentials.image && Credentials.image != null
+        ? Credentials.image.public_id
+        : false;
+    if (req.body.isDeleteImage) {
+      if (imgID) {
+        await cloudinary.uploader.destroy(imgID);
+        Credentials.image = null;
+      }
+    }
     if (req.file) {
       if (imgID) {
         await cloudinary.uploader.destroy(imgID);
       }
-      const newImg = await cloudinary.uploader.upload(
-        req.file.path,
-        {
-          upload_preset: "Portfolio_profile",
+      const NewObj = {
+        image: {
+          url: req.file.path,
+          public_id: req.file.path
+            .split("/")
+            .slice(-2)
+            .join("/")
+            .replace(/\.\w+$/, ""),
+          mimetype: req.file.mimetype,
+          originalname: req.file.originalname,
+          size: req.file.size,
         },
-        (err, imgResult) => {
-          if (err) {
-            return res.send({ status: "error", message: err });
-          } else {
-            return imgResult;
-          }
-        }
-      );
+        education: JSON.parse(req.body.education),
+        skills: JSON.parse(req.body.skills),
+        link: JSON.parse(req.body.link),
+        userID: req.body.userID,
+      };
 
-      if (newImg) {
-        const NewObj = {
-          image: {
-            url: newImg.secure_url,
-            public_id: newImg.public_id,
-          },
-          education: JSON.parse(req.body.education),
-          skills: JSON.parse(req.body.skills),
-          link: JSON.parse(req.body.link),
-          userID: req.body.userID,
-        };
-
-        await PortFolio_Credential.findByIdAndUpdate(req.params.id, NewObj, {
-          new: true,
-        });
-        res.send({ status: "ok", message: "Credentials Updated successfully" });
-      } else {
-        res.send({ status: "error", message: "Something went wrong" });
-      }
+      await PortFolio_Credential.findByIdAndUpdate(req.params.id, NewObj, {
+        new: true,
+      });
+      res.send({ status: "ok", message: "Credentials Updated successfully" });
     } else {
       const NewObj = {
         image: Credentials.image,
