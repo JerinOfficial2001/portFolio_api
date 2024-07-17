@@ -12,6 +12,7 @@ const auth = require("./routes/auth");
 const contact = require("./routes/Contacts/index");
 const contact_Msg = require("./routes/Contacts/msg");
 const credentials = require("./routes/credentials");
+const feedbacks = require("./routes/feedback");
 dotenv.config();
 
 const PORT = process.env.PORT;
@@ -27,6 +28,7 @@ app.use("/portfolio/profile", profile);
 app.use("/portfolio/contact", contact);
 app.use("/portfolio/contact/msg", contact_Msg);
 app.use("/portfolio/credentials", credentials);
+app.use("/portfolio/feedbacks", feedbacks);
 // app.use("/portfolio/Public", express.static(path.join(__dirname, "Public")));
 app.get("/", (req, res) => {
   res.json({ status: "ok", message: "PORTFOLIO Server Connected" });
