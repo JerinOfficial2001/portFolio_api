@@ -19,11 +19,11 @@ const AddImage = (file) => {
 exports.AddFeedback = async (req, res) => {
   const userData = await PortFolio_Auth.findById(req.body.user_id);
   const formData = {
-    name: req.body.name,
+    name: userData.name,
     image: userData.image,
     message: { text: req.body.message, image: null },
     user_id: req.body.user_id,
-    gender: req.body.gender,
+    gender: userData.gender,
   };
   try {
     if (req.file) {
