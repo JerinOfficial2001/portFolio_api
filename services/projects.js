@@ -2,7 +2,7 @@ const { PortFolio_Projects } = require("../models/Projects/projects");
 const cloudinary = require("../utils/cloudinary");
 
 exports.addWebsite = async (req, res) => {
-  const singleImage = req.files["image"][0];
+  const singleImage = req.files["image"] ? req.files["image"][0] : false;
   const multiImages = req.files["images"];
   const { title, endpoint, link, userID, isVisible, category } = req.body;
   try {
@@ -61,7 +61,7 @@ exports.addWebsite = async (req, res) => {
 exports.addApplication = async (req, res) => {
   const { title, userID, isVisible, tools, description, category } = req.body;
   try {
-    const singleImage = req.files["image"][0];
+    const singleImage = req.files["image"] ? req.files["image"][0] : false;
     const multiImages = req.files["images"];
     if (description && title && userID && category && tools.length !== 0) {
       const DATA = {
@@ -123,7 +123,7 @@ exports.addApplication = async (req, res) => {
   }
 };
 exports.updateWebsite = async (req, res) => {
-  const singleImage = req.files["image"][0];
+  const singleImage = req.files["image"] ? req.files["image"][0] : false;
   const multiImages = req.files["images"];
   const { title, endpoint, link, userID, isVisible, credentials } = req.body;
   try {

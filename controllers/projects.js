@@ -29,12 +29,18 @@ exports.addProject = async (req, res) => {
 };
 exports.getProjects = async (req, res) => {
   try {
+    const isLoggedIn = req.query.isLoggedIn;
     const result = await PortFolio_Projects.find({
       userID: req.params.id,
       category: req.query.category,
     });
     if (result) {
-      res.status(200).json({ status: "ok", data: result });
+      if (isLoggedIn != "false") {
+        res.status(200).json({ status: "ok", data: result });
+      } else {
+        const visibleProjects = result.filter((elem) => elem.isVisible);
+        res.status(200).json({ status: "ok", data: visibleProjects });
+      }
     } else {
       res.status(200).json({ status: "error", message: "No data found" });
     }
@@ -91,29 +97,22 @@ exports.updateVisiblity = async (req, res, next) => {
     // Handle case where no files are uploaded
     const Project = await PortFolio_Projects.findById(req.params.id);
     if (Project) {
-      const updatedData = {
-        isVisible: req.body.isVisible,
-        image: Project.image,
-        title: Project.title,
-        endpoint: Project.endpoint,
-        link: Project.link,
-        userID: Project.userID,
-        credentials: Project.credentials,
-      };
-      const result = await PortFolio_Projects.findByIdAndUpdate(
-        req.params.id,
-        updatedData,
-        { new: true }
-      );
-
-      res.status(200).json({
-        status: "ok",
-        message: req.body.isVisible
-          ? "Project visible to everyone"
-          : "Project added to draft",
-      });
+      Project.isVisible = req.body.isVisible;
+      const result = Project.save();
+      if (result) {
+        res.status(200).json({
+          status: "ok",
+          message: req.body.isVisible
+            ? "Project visible to everyone"
+            : "Project added to draft",
+        });
+      } else {
+        res
+          .status(200)
+          .json({ status: "error", message: "Project not updated" });
+      }
     } else {
-      res.status(404).json({ status: "error", message: "Project Not Found" });
+      res.status(200).json({ status: "error", message: "Project Not Found" });
     }
   } catch (error) {
     next(error);
