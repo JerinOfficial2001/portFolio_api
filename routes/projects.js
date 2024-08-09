@@ -11,6 +11,7 @@ const {
   downloadAPK,
   deleteAPK,
   getAPKbyName,
+  getAllVisibleProducts,
 } = require("../controllers/projects");
 const router = express.Router();
 const multer = require("multer");
@@ -40,6 +41,7 @@ router.post(
   upload.fields([{ name: "image", maxCount: 1 }, { name: "images" }]),
   addProject
 );
+router.get("/getallprojects", getAllVisibleProducts);
 router.get("/get/:id", getProjects);
 router.get("/getByID/:id", getProjectByID);
 router.delete("/remove/:id", removeProject);

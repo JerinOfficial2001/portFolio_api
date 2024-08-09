@@ -10,6 +10,8 @@ const {
 } = require("../services/projects");
 const cloudinary = require("../utils/cloudinary");
 const Grid = require("gridfs-stream");
+const { PortFolio_Auth } = require("../models/auth");
+const { PortFolio_Profile } = require("../models/profile");
 const BASE_URL = process.env.BASE_URL;
 const MONGO = process.env.MONGODB;
 const client = new MongoClient(MONGO);
@@ -25,6 +27,38 @@ exports.addProject = async (req, res) => {
     }
   } catch (error) {
     console.log(error);
+  }
+};
+exports.getAllVisibleProducts = async (req, res) => {
+  try {
+    const allProjects = await PortFolio_Projects.find({ isVisible: true });
+    const projectsWithUserData = await Promise.all(
+      allProjects.map(async (elem) => {
+        const user = await PortFolio_Profile.findOne({ userID: elem.userID });
+        const userData = {
+          profileImg: user.image,
+          userName: user.name,
+          gender: user.gender,
+          role: user.role,
+        };
+        return Object.assign({}, elem.toObject(), userData);
+      })
+    );
+    res.status(200).json({
+      status: "ok",
+      data: projectsWithUserData.sort((a, b) => {
+        if (a.createdAt < b.createdAt) {
+          return -1;
+        }
+        if (a.createdAt > b.createdAt) {
+          return 1;
+        }
+        return 0;
+      }),
+    });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ status: "ok", message: "Internal server error" });
   }
 };
 exports.getProjects = async (req, res) => {
